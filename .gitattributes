@@ -1,0 +1,3 @@
+# strip notebook outputs on commit (run `uv run nbstripout --install` once per clone)
+*.ipynb filter=nbstripout
+*.ipynb diff=ipynb
