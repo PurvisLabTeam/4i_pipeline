@@ -1,6 +1,8 @@
 # 4i_pipeline
 Notebooks for running the Purvis lab 4i pipeline, from stitched ND2 images to per-cell data, AnnData and PHATE.
 
+A step-by-step guide for lab members is in [`docs/pipeline_guide.html`](docs/pipeline_guide.html) (open it in a browser).
+
 # Setup (once per computer)
 1. Install [uv](https://docs.astral.sh/uv/) and Git.
 2. Clone this repository, then in the repository folder run:
