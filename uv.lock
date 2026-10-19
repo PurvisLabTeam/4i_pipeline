@@ -51,7 +51,7 @@ requires-dist = [
     { name = "anndata", specifier = ">=0.12.19" },
     { name = "cellpose", specifier = ">=4.2.1.1" },
     { name = "dask", specifier = ">=2026.8.0" },
-    { name = "delve-fs", editable = "../delve" },
+    { name = "delve-fs", git = "https://github.com/omar-merhebi/delve?rev=v0.1.7%2Bpurvislab.1" },
     { name = "ipywidgets", specifier = ">=8.1.9" },
     { name = "jupyterlab", specifier = ">=4.6.4" },
     { name = "magicgui", specifier = ">=0.10.2" },
@@ -613,7 +613,7 @@ wheels = [
 [[package]]
 name = "delve-fs"
 version = "0.1.7+purvislab.1"
-source = { editable = "../delve" }
+source = { git = "https://github.com/omar-merhebi/delve?rev=v0.1.7%2Bpurvislab.1#3a6ce1a79e609e687110839de45d636bcf1cff8d" }
 dependencies = [
     { name = "anndata" },
     { name = "matplotlib" },
@@ -625,20 +625,6 @@ dependencies = [
     { name = "sketchkh" },
     { name = "tqdm" },
     { name = "umap-learn" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "anndata", specifier = ">=0.7.6" },
-    { name = "matplotlib", specifier = ">=3.7.1" },
-    { name = "numpy", specifier = ">=1.26.4" },
-    { name = "scanpy", specifier = ">=1.8.1" },
-    { name = "scikit-learn", specifier = ">=0.23.2" },
-    { name = "scipy", specifier = ">=1.7.1" },
-    { name = "seaborn", specifier = ">=0.12.2" },
-    { name = "sketchkh", specifier = ">=0.1.4" },
-    { name = "tqdm" },
-    { name = "umap-learn", specifier = ">=0.5.1" },
 ]
 
 [[package]]
