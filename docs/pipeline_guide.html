@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4i Pipeline Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a single bench-protocol column; each part is colour-coded with a 4i fluorophore channel (DAPI, AF488, AF568, AF647). */
+:root {
+  --bg: #f6f7fa;
+  --surface: #ffffff;
+  --fg: #1c2230;
+  --muted: #5a6478;
+  --line: #d9dde6;
+  --code-bg: #eef1f6;
+  --dapi: #3d4fc4;
+  --af488: #1f8a4c;
+  --af568: #c25a10;
+  --af647: #b0247a;
+  --warn-bg: #fff4e0;
+  --warn-fg: #7a4a00;
+  --note-bg: #e9eefc;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --plate-nodata: #e4e7ee;
+  --plate-excluded: #ffffff;
+  --plate-s1: #8dd3c7;
+  --plate-s2: #fdb462;
+  --plate-s3: #bebada;
+  --plate-sel: #ff7f00;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12151d; --surface: #1a1f2a; --fg: #e6e9f0; --muted: #a2abbe; --line: #2e3545; --code-bg: #232a38;
+    --dapi: #8f9cff; --af488: #5fd08f; --af568: #f0954e; --af647: #f07cc0;
+    --warn-bg: #3a2c12; --warn-fg: #f4cf8d; --note-bg: #1f2740;
+    --plate-nodata: #2a303d; --plate-excluded: #e9ecf2;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12151d; --surface: #1a1f2a; --fg: #e6e9f0; --muted: #a2abbe; --line: #2e3545; --code-bg: #232a38;
+  --dapi: #8f9cff; --af488: #5fd08f; --af568: #f0954e; --af647: #f07cc0;
+  --warn-bg: #3a2c12; --warn-fg: #f4cf8d; --note-bg: #1f2740;
+  --plate-nodata: #2a303d; --plate-excluded: #e9ecf2;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+img { max-width: 100%; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+.page { max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.2; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 2.8rem); letter-spacing: -0.01em; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.15rem; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--dapi); }
+code, pre, kbd { font-family: var(--font-mono); font-size: 0.88em; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--surface); }
+ul, ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 6px; }
+.eyebrow { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+
+header.intro { display: flex; flex-direction: column; gap: 14px; }
+header.intro .lede { font-size: 1.12rem; color: var(--muted); }
+
+/* pipeline strip */
+.flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.flow .stage { display: flex; flex-direction: column; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); min-width: 0; }
+.flow .stage b { font-family: var(--font-mono); font-size: 0.9rem; }
+.flow .stage span { font-size: 0.8rem; color: var(--muted); }
+.flow .stage.optional { border-style: dashed; }
+.flow .arrow { color: var(--muted); }
+.legend-line { font-size: 0.85rem; color: var(--muted); }
+
+/* parts */
+section.part { display: flex; flex-direction: column; gap: 18px; border-top: 4px solid var(--part); padding-top: 20px; }
+section.part > .head { display: flex; flex-direction: column; gap: 6px; }
+section.part .eyebrow { color: var(--part); }
+.p1 { --part: var(--dapi); } .p2 { --part: var(--af488); } .p3 { --part: var(--af568); } .p4 { --part: var(--af647); } .p5 { --part: var(--muted); }
+
+ol.steps { list-style: none; padding: 0; counter-reset: step; gap: 22px; }
+ol.steps > li { counter-increment: step; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 4px 14px; }
+ol.steps > li::before {
+  content: counter(step); grid-row: span 2;
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  border: 2px solid var(--part); color: var(--part); font-weight: 700; font-family: var(--font-display);
+}
+ol.steps > li > .body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+/* code with copy */
+.code { position: relative; min-width: 0; }
+.code pre { margin: 0; background: var(--code-bg); border-radius: 8px; padding: 12px 14px; padding-right: 76px; overflow-x: auto; line-height: 1.5; }
+.code button {
+  position: absolute; top: 8px; right: 8px; font: 600 0.75rem var(--font-body);
+  background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; cursor: pointer;
+}
+.code button:focus-visible, button:focus-visible { outline: 2px solid var(--dapi); outline-offset: 2px; }
+
+.callout { border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.callout.warn { background: var(--warn-bg); color: var(--warn-fg); }
+.callout.note { background: var(--note-bg); }
+.callout b.t { font-family: var(--font-display); }
+
+/* tree */
+.tree { overflow-x: auto; }
+.tree pre { margin: 0; background: var(--code-bg); border-radius: 8px; padding: 12px 14px; line-height: 1.55; }
+.tree .c { color: var(--muted); }
+
+/* table */
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.93rem; }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+th { font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+
+/* plate legend */
+.plate-legend { display: flex; flex-wrap: wrap; gap: 10px 22px; }
+.plate-legend .item { display: flex; align-items: center; gap: 8px; font-size: 0.92rem; }
+.well { width: 40px; height: 26px; border-radius: 4px; border: 1px solid var(--line); display: grid; place-items: center; font: 600 0.8rem var(--font-mono); color: #1c2230; flex: none; }
+.w-nodata { background: var(--plate-nodata); color: transparent; }
+.w-excl { background: var(--plate-excluded); }
+.w-s1 { background: var(--plate-s1); } .w-s2 { background: var(--plate-s2); } .w-s3 { background: var(--plate-s3); }
+.w-sel { background: var(--plate-sel); }
+
+/* notebook cards */
+.nb-list { display: flex; flex-direction: column; gap: 14px; }
+.nb { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.nb .top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.nb .num { font: 700 1.05rem var(--font-mono); color: var(--af647); }
+.nb .tag { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px; color: var(--muted); }
+.nb dl { margin: 0; display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: 4px 12px; }
+.nb dt { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); padding-top: 2px; }
+.nb dd { margin: 0; min-width: 0; }
+@media (max-width: 520px) {
+  .nb dl { grid-template-columns: minmax(0, 1fr); }
+  .nb dt { padding-top: 6px; }
+}
+footer { color: var(--muted); font-size: 0.88rem; border-top: 1px solid var(--line); padding-top: 16px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="intro">
+  <span class="eyebrow">Purvis Lab · 4i image analysis</span>
+  <h1>4i Pipeline Guide</h1>
+  <p class="lede">How to take a 4i experiment from stitched ND2 images to per-cell data, an AnnData file and PHATE plots, using the notebooks in the <code>4i_pipeline</code> repository on a lab Windows workstation.</p>
+  <div class="flow" aria-label="Pipeline order">
+    <div class="stage"><b>setup</b><span>experiment.json</span></div><span class="arrow">→</span>
+    <div class="stage"><b>00</b><span>preprocess</span></div><span class="arrow">→</span>
+    <div class="stage"><b>01</b><span>segment (GPU)</span></div><span class="arrow">→</span>
+    <div class="stage"><b>02</b><span>find transforms</span></div><span class="arrow">→</span>
+    <div class="stage optional"><b>03</b><span>fix alignment</span></div><span class="arrow">→</span>
+    <div class="stage"><b>04</b><span>align</span></div><span class="arrow">→</span>
+    <div class="stage optional"><b>05</b><span>mask debris</span></div><span class="arrow">→</span>
+    <div class="stage"><b>06</b><span>cell properties</span></div><span class="arrow">→</span>
+    <div class="stage"><b>07</b><span>AnnData</span></div><span class="arrow">→</span>
+    <div class="stage"><b>08</b><span>PHATE</span></div>
+  </div>
+  <p class="legend-line">Dashed boxes are only needed sometimes: 03 when an automatic alignment is wrong, 05 when a well has debris or artifacts to exclude.</p>
+</header>
+
+<!-- PART 1 -->
+<section class="part p1" id="install">
+  <div class="head">
+    <span class="eyebrow">Part 1 · once per computer</span>
+    <h2>Install the pipeline</h2>
+    <p>Skip this part if the workstation already has the repository and you only need to update it (see <a href="#update">Updating</a>).</p>
+  </div>
+  <ol class="steps">
+    <li><div class="body">
+      <h3>Install Git and uv</h3>
+      <p>Install <a href="https://git-scm.com/download/win" target="_blank" rel="noopener">Git for Windows</a> with the default options. Then open <b>PowerShell</b> and install uv, the tool that creates the Python environment:</p>
+      <div class="code"><pre>powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"</pre><button type="button">Copy</button></div>
+      <p>Close PowerShell and open a new one so both commands are found.</p>
+    </div></li>
+    <li><div class="body">
+      <h3>Download the repository</h3>
+      <p>Clone it into your own folder on the workstation, not onto <code>Z:</code> (code and environments run much slower from the network drive). You need access to the PurvisLabTeam organization on GitHub.</p>
+      <div class="code"><pre>cd $HOME
+git clone https://github.com/PurvisLabTeam/4i_pipeline.git
+cd 4i_pipeline</pre><button type="button">Copy</button></div>
+    </div></li>
+    <li><div class="body">
+      <h3>Create the environment</h3>
+      <p>This installs Python 3.12 and every package the notebooks use (Cellpose-SAM with the GPU build of PyTorch, napari, scanpy, PHATE, delve). It takes a few minutes the first time.</p>
+      <div class="code"><pre>uv sync
+uv run nbstripout --install</pre><button type="button">Copy</button></div>
+      <p>The second command makes git leave notebook outputs out of commits, so your runs never show up as code changes.</p>
+    </div></li>
+    <li><div class="body">
+      <h3>Open the notebooks in VS Code</h3>
+      <ol>
+        <li>Install the <b>Python</b> and <b>Jupyter</b> extensions (both by Microsoft).</li>
+        <li><b>File → Open Folder…</b> and choose the <code>4i_pipeline</code> folder (the folder itself, not a single notebook).</li>
+        <li>Open any notebook, click <b>Select Kernel</b> (top right) → <b>Python Environments</b> → <b>.venv</b>. VS Code remembers this per notebook.</li>
+      </ol>
+      <div class="callout note"><b class="t">GPU driver</b><p>Segmentation needs an NVIDIA driver recent enough for CUDA 13 (driver 580 or newer). Run <code>nvidia-smi</code> in PowerShell to see the driver version and GPU.</p></div>
+    </div></li>
+  </ol>
+</section>
+
+<!-- PART 2 -->
+<section class="part p2" id="folder">
+  <div class="head">
+    <span class="eyebrow">Part 2 · once per experiment</span>
+    <h2>Prepare the experiment folder</h2>
+    <p>Everything for one experiment lives in one folder on <code>Z:</code>. You provide the raw data and the info file; the notebooks create the rest.</p>
+  </div>
+  <div class="tree"><pre>Z:\Name\Experiment folder\
+  experiment.json         <span class="c">written by setup_experiment</span>
+  info_exp.csv            <span class="c">you provide: channel names per round</span>
+  data\                   <span class="c">you provide: stitched .nd2 files</span>
+    Round_R0_DNA_pRB_RB_CDK2\
+      WellB02_ChannelDAPI_4i,AF488,AF568,AF647_Seq0036.nd2
+      WellB03_Channel...nd2
+    Round_R1_DNA_CDK4_E2F1_CyclinA2\
+      ...
+  output_df\  output_images\  segmented\  aligned_tiffs\  masks\  cell_data\   <span class="c">created by 00–06</span>
+  fullest_df.csv  standard_adata.h5ad  standard_adata_sub.h5ad                  <span class="c">created by 07</span></pre></div>
+  <ol class="steps">
+    <li><div class="body">
+      <h3>Put the stitched ND2 files in <code>data\</code></h3>
+      <ul>
+        <li>One subfolder per round, named <code>Round_&lt;round&gt;_…</code>. Round names must be unique (no <code>Round_00_bad</code> next to <code>Round_00_good</code>).</li>
+        <li>Keep the standard Elements file names starting <code>Well&lt;well&gt;_Channel</code>, e.g. <code>WellB02_Channel…</code>. Tile files (<code>Well…_Point…</code>) can stay in the folder; they are ignored.</li>
+        <li>Stitched images may differ slightly in size between rounds; 00 trims them to a common size.</li>
+      </ul>
+    </div></li>
+    <li><div class="body">
+      <h3>Write <code>info_exp.csv</code></h3>
+      <p>One row per round. The first column is the round name used in the folder names; the other column headers are the optical configuration (OC) names from Elements; each cell says what that channel stained in that round. Leave a cell empty if an OC wasn't used in that round. Every round needs a <code>DNA</code> channel, which is used for alignment.</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>myRound</th><th>DAPI_4i</th><th>AF488</th><th>AF568</th><th>AF647</th></tr></thead>
+        <tbody>
+          <tr><td>R0</td><td>DNA</td><td>pRB</td><td>RB</td><td>CDK2</td></tr>
+          <tr><td>R1</td><td>DNA</td><td>CDK4</td><td>E2F1</td><td>CyclinA2</td></tr>
+          <tr><td>R4</td><td>DNA</td><td>CDT1</td><td></td><td></td></tr>
+        </tbody>
+      </table></div>
+      <p>The per-cell columns are named from this file, e.g. <code>R0_pRB_nuc_mean</code>, <code>R1_CDK4_ring_mean</code>.</p>
+    </div></li>
+  </ol>
+</section>
+
+<!-- PART 3 -->
+<section class="part p3" id="setup">
+  <div class="head">
+    <span class="eyebrow">Part 3 · once per experiment</span>
+    <h2>Describe the experiment with <code>setup_experiment</code></h2>
+    <p>This form writes <code>experiment.json</code>: the wells, each well's treatment, dose and time, and the derived features for notebook 07. Every pipeline notebook reads it, so there are no paths or well lists to edit in the notebooks.</p>
+  </div>
+  <ol class="steps">
+    <li><div class="body">
+      <h3>Load the folder</h3>
+      <p>Open <code>setup_experiment.ipynb</code>, put the experiment folder in the cell and run it:</p>
+      <div class="code"><pre>folder = r'Z:\Name\Experiment folder'</pre><button type="button">Copy</button></div>
+      <p>Or leave it empty, type the folder in the form and click <b>Load folder</b>. Messages (including "Folder not found") appear at the bottom of the form, above the Save button.</p>
+      <p>If the raw data or the info file are somewhere else, fill in <b>data folder</b> / <b>info file</b> (a full path, or one relative to the experiment folder).</p>
+    </div></li>
+    <li><div class="body">
+      <h3>Fill in the experiment details</h3>
+      <p><b>Experiment key</b> is a short unique ID such as <code>CM_exp1.3_20260310</code> (letters, numbers, <code>_ - .</code>, no spaces). <b>Name</b>, cell type, passage, date and notes are for people reading the config later.</p>
+    </div></li>
+    <li><div class="body">
+      <h3>Choose wells and conditions on the plate</h3>
+      <div class="plate-legend" aria-label="Plate colours">
+        <div class="item"><span class="well w-nodata">·</span>No ND2 files for this well</div>
+        <div class="item"><span class="well w-excl"></span>Has data, not included</div>
+        <div class="item"><span class="well w-s1">1</span><span class="well w-s2">2</span><span class="well w-s3">3</span>Included; colour and number are the sample_ID</div>
+        <div class="item"><span class="well w-sel">✓</span>Selected for a condition</div>
+      </div>
+      <ol>
+        <li>In <b>Include / exclude wells</b> mode, click wells to add or remove them (all wells with data start included).</li>
+        <li>Switch to <b>Select wells for a condition</b>, click the wells that got the same treatment, fill in <code>treatment</code>, <code>dose</code>, <code>treatment_time</code> and click <b>Apply to selected wells</b>. Repeat for each condition.</li>
+        <li>Need another column, such as <code>replicate</code> or <code>cell_line</code>? Type it in <b>Extra columns</b>. Tick it under <b>Columns that define a condition</b> only if it should split samples (a replicate number shouldn't).</li>
+      </ol>
+      <p>Wells with the same condition get the same <b>sample_ID</b> automatically, numbered in plate order. The table under step 5 shows each sample_ID, its condition and its wells.</p>
+    </div></li>
+    <li><div class="body">
+      <h3>Or import the plate layout from a CSV</h3>
+      <p>One row per well; only <code>well</code> is required (<code>B2</code> and <code>B02</code> both work). Add <code>sample_ID</code> only if you want to keep numbering from earlier experiments; otherwise leave it out.</p>
+      <div class="code"><pre>well,treatment,dose,treatment_time
+B02,control,0,96h
+B03,abema_fulv,100nM,96h
+C02,control,0,96h</pre><button type="button">Copy</button></div>
+      <p><b>Export CSV template</b> writes a CSV listing the wells with data, ready to fill in with Excel; put its name in the CSV box and click <b>Import CSV</b> when done. You can still adjust wells on the plate afterwards.</p>
+    </div></li>
+    <li><div class="body">
+      <h3>Check the derived features</h3>
+      <p>One per line as <code>name = formula</code>, using the per-cell column names. The form suggests <code>pRB_RB_ratio</code> and <code>total_area_DNA</code> when those channels exist and lists the available columns.</p>
+      <div class="code"><pre>pRB_RB_ratio = R0_pRB_nuc_mean / R0_RB_nuc_mean
+total_area_DNA = R0_DNA_nuc_mean * nuc_area</pre><button type="button">Copy</button></div>
+    </div></li>
+    <li><div class="body">
+      <h3>Save</h3>
+      <p>Click <b>Save experiment.json</b>. The form refuses to save if a well is listed twice or has no ND2 files, and warns about other problems (for example one sample_ID covering two conditions). It keeps the previous version as <code>experiment.json.bak</code> and prints the line for the next part:</p>
+      <div class="code"><pre>CONFIG = r'Z:\Name\Experiment folder\experiment.json'</pre><button type="button">Copy</button></div>
+    </div></li>
+  </ol>
+</section>
+
+<!-- PART 4 -->
+<section class="part p4" id="run">
+  <div class="head">
+    <span class="eyebrow">Part 4 · each experiment</span>
+    <h2>Run the notebooks</h2>
+    <p>In every notebook, replace the placeholder <code>CONFIG = r'Z:\PATH\TO\EXPERIMENT\experiment.json'</code> at the top with your line from the form, then run the cells from the top. Each notebook prints which experiment it loaded; check it before continuing. Run them in order: each one reads the previous one's output.</p>
+  </div>
+  <div class="nb-list">
+    <article class="nb">
+      <div class="top"><span class="num">00</span><h3>Preprocess data</h3></div>
+      <dl>
+        <dt>Does</dt><dd>Builds a table of every round and channel for each well and saves the DNA image of each round, trimmed to a common size, for segmentation. It prints “Data preparation passed tests” when every round has exactly one DNA channel.</dd>
+        <dt>You set</dt><dd>Nothing besides <code>CONFIG</code>.</dd>
+        <dt>Writes</dt><dd><code>output_df\df_&lt;well&gt;.pkl</code>, <code>output_images\&lt;well&gt;\</code></dd>
+      </dl>
+    </article>
+    <article class="nb">
+      <div class="top"><span class="num">01</span><h3>Cellpose segmentation</h3><span class="tag">GPU</span></div>
+      <dl>
+        <dt>Does</dt><dd>Segments nuclei in each round's DNA image with Cellpose-SAM. It stops right away with an error if PyTorch can't see the GPU.</dd>
+        <dt>You set</dt><dd><code>selected_diameter</code> (default 30 pixels). SAM handles a range of sizes, so change it only if nuclei come out clearly too large or too small.</dd>
+        <dt>Writes</dt><dd><code>segmented\&lt;well&gt;\labels_&lt;well&gt;_round_000.tif</code>, …</dd>
+      </dl>
+      <div class="callout note"><p>The first run on a computer downloads the SAM model (about 1 GB). Run <code>nvidia-smi</code> in PowerShell while it works to see GPU use. If it fails with <b>CUDA out of memory</b>, add <code>batch_size=4</code> (or 2) to the <code>model.eval(...)</code> call.</p></div>
+    </article>
+    <article class="nb">
+      <div class="top"><span class="num">02</span><h3>Find transforms</h3></div>
+      <dl>
+        <dt>Does</dt><dd>Registers every round's segmentation to the first round (rigid: shift and rotation) and saves the transforms.</dd>
+        <dt>You set</dt><dd><code>downscale_factor</code> (1 = full size; 2 if it runs out of memory on very large images).</dd>
+        <dt>Writes</dt><dd><code>output_df\tmat_&lt;well&gt;.pkl</code></dd>
+      </dl>
+      <p>The last cells (“Optional - test transformations”) open napari to inspect the alignment of the first well; skip them unless you want to look.</p>
+    </article>
+    <article class="nb">
+      <div class="top"><span class="num">03</span><h3>Fix an alignment by hand</h3><span class="tag">only if needed</span></div>
+      <dl>
+        <dt>Does</dt><dd>Opens two rounds of one well in napari with the Affinder plugin so you can set the transform by clicking matching points, then replaces that round's transform.</dd>
+        <dt>You set</dt><dd><code>myWell</code> (e.g. <code>'D03'</code>), <code>myRound</code> (the round to fix, as named in the folders) and <code>anchor_round_selected</code>. In Affinder choose the reference image, the image to transform and “similarity”.</dd>
+        <dt>Writes</dt><dd>Updates <code>output_df\tmat_&lt;well&gt;.pkl</code>; rerun 04 for that well afterwards.</dd>
+      </dl>
+    </article>
+    <article class="nb">
+      <div class="top"><span class="num">04</span><h3>Align all channels</h3></div>
+      <dl>
+        <dt>Does</dt><dd>Applies the transforms to every channel of every round and saves one aligned TIFF per channel.</dd>
+        <dt>You set</dt><dd>Nothing besides <code>CONFIG</code>.</dd>
+        <dt>Writes</dt><dd><code>aligned_tiffs\&lt;well&gt;\Round_R0_wellB02_pRB.tif</code>, …</dd>
+      </dl>
+    </article>
+    <article class="nb">
+      <div class="top"><span class="num">05</span><h3>Mask debris and artifacts</h3><span class="tag">only if needed</span></div>
+      <dl>
+        <dt>Does</dt><dd>Opens a well's aligned images in napari. Draw shapes on the <b>mask</b> layer over regions to exclude; use <b>Choose channel</b> to look through the channels.</dd>
+        <dt>You set</dt><dd><code>selected_well</code> (one well at a time) and <code>use_existing</code> (True adds to a saved mask).</dd>
+        <dt>Writes</dt><dd><code>masks\mask_&lt;well&gt;.pkl</code>. Click <b>Save Mask</b> before closing napari.</dd>
+      </dl>
+    </article>
+    <article class="nb">
+      <div class="top"><span class="num">06</span><h3>Calculate cell properties</h3></div>
+      <dl>
+        <dt>Does</dt><dd>Measures every nucleus and a cytoplasmic ring around it in every channel: area, shape, mean intensities, total nuclear protein and nuclear/cytoplasm ratios. Cells touching the image border or without DNA signal are dropped, and the mask is recorded per cell. It stops if two rounds have the same round/signal name.</dd>
+        <dt>You set</dt><dd><code>label_round</code> (which round's segmentation defines the cells; default 0).</dd>
+        <dt>Writes</dt><dd><code>cell_data\cell_data_&lt;well&gt;_df.csv</code> and <code>.pkl</code></dd>
+      </dl>
+    </article>
+    <article class="nb">
+      <div class="top"><span class="num">07</span><h3>AnnData conversion</h3></div>
+      <dl>
+        <dt>Does</dt><dd>Combines all wells with their metadata from the config, adds the derived features, optionally labels cells pRB high/low, z-scores the features and saves an AnnData file plus a 2,000-cells-per-sample subsample made with kernel herding.</dd>
+        <dt>You set</dt><dd>
+          <ul>
+            <li>After the histogram, pick a cutoff and set <code>THRESHOLD_Z</code> in the threshold cell.</li>
+            <li>Run <b>either</b> the ONE threshold cell (pRB low/high) <b>or</b> the TWO threshold cell (low/middle/high), not both.</li>
+            <li>The histogram uses the control sample by default (<code>THRESHOLD_SAMPLE_ID</code>).</li>
+          </ul>
+        </dd>
+        <dt>Writes</dt><dd><code>fullest_df.csv</code>, <code>standard_adata.h5ad</code>, <code>standard_adata_sub.h5ad</code> in the experiment folder</dd>
+      </dl>
+      <p>A derived feature whose channels aren't in this experiment is skipped with a “SKIPPED” message; that's expected, not an error.</p>
+    </article>
+    <article class="nb">
+      <div class="top"><span class="num">08</span><h3>PHATE plotting</h3></div>
+      <dl>
+        <dt>Does</dt><dd>Keeps the features you list, ranks them with delve's Laplacian score, computes a 3D PHATE embedding and exports plots coloured by each feature to PowerPoint.</dd>
+        <dt>You set</dt><dd><code>features_to_keep</code> (use your panel's column names), <code>selected_sample_ids</code>, and the PHATE settings <code>count_list</code> (nearest neighbours) and <code>index_ranges</code> (how many top-ranked features to use).</dd>
+        <dt>Writes</dt><dd><code>standard_adata_sub_filtered…h5ad</code>, <code>phate_plots\</code> and <code>.pptx</code> files in the experiment folder</dd>
+      </dl>
+    </article>
+  </div>
+  <div class="callout warn">
+    <b class="t">Comparing with experiments segmented before Cellpose-SAM</b>
+    <p>SAM draws tighter nuclear outlines than the older Cellpose model. On the same cells, nuclear areas come out about 20% smaller, totals (mean × area) about 14% lower, and ring means slightly higher. Cell counts and nuclear means agree closely. Within an experiment everything is consistent, but don't pool areas, totals or nuclear/cytoplasm ratios with pre-SAM experiments without accounting for this.</p>
+  </div>
+</section>
+
+<!-- PART 5 -->
+<section class="part p5" id="update">
+  <div class="head">
+    <span class="eyebrow">Part 5 · reference</span>
+    <h2>Updating and troubleshooting</h2>
+  </div>
+  <ol class="steps">
+    <li><div class="body">
+      <h3>Get the latest version</h3>
+      <p>In PowerShell, in the <code>4i_pipeline</code> folder:</p>
+      <div class="code"><pre>git pull
+uv sync</pre><button type="button">Copy</button></div>
+      <p>Restart the notebook kernel afterwards (the ↻ button in VS Code) so it picks up new packages.</p>
+    </div></li>
+  </ol>
+  <div class="tablewrap"><table>
+    <thead><tr><th>You see</th><th>What to do</th></tr></thead>
+    <tbody>
+      <tr><td><code>No experiment config at …</code></td><td>The <code>CONFIG</code> line still has the placeholder or a wrong path. Paste the line the setup form printed.</td></tr>
+      <tr><td>All wells on the setup plate are grey</td><td>No folder is loaded, or no ND2 files were found. Check the message at the bottom of the form, the folder path, and that <code>data\</code> holds <code>Round_…</code> folders with <code>Well…_Channel…nd2</code> files.</td></tr>
+      <tr><td><code>No GPU available to PyTorch</code> in 01</td><td>Run <code>uv sync</code> in the repository folder and restart the kernel. If it persists, check <code>nvidia-smi</code> and update the NVIDIA driver.</td></tr>
+      <tr><td><code>CUDA out of memory</code> in 01</td><td>Add <code>batch_size=4</code> (or 2) to <code>model.eval(...)</code>.</td></tr>
+      <tr><td>Kernel list doesn't show <code>.venv</code></td><td>Open the repository folder (not a single file) in VS Code, or choose <b>Enter interpreter path</b> and pick <code>.venv\Scripts\python.exe</code>.</td></tr>
+      <tr><td><code>Data preparation passed tests</code> is missing in 00</td><td>A round has no DNA channel or more than one. Check <code>info_exp.csv</code>.</td></tr>
+      <tr><td><code>Duplicate round/signal names</code> in 06</td><td>Two rounds in <code>info_exp.csv</code> use the same round name and signal. Make them unique and rerun from 00.</td></tr>
+      <tr><td>Notebook outputs show up in <code>git diff</code></td><td>Run <code>uv run nbstripout --install</code> once in this copy of the repository.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer>
+  Repository: <code>PurvisLabTeam/4i_pipeline</code>. Shared code lives in <code>src/fouri</code>; the folder layout and the metadata CSV format are also described in the repository README.
+</footer>
+</div>
+
+<script>
+document.querySelectorAll('.code button').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var pre = btn.parentElement.querySelector('pre');
+    var text = pre.innerText;
+    function done(label) { btn.textContent = label; setTimeout(function () { btn.textContent = 'Copy'; }, 1500); }
+    function selectFallback() {
+      var range = document.createRange(); range.selectNodeContents(pre);
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      done('Press Ctrl+C');
+    }
+    try {
+      navigator.clipboard.writeText(text).then(function () { done('Copied'); }, selectFallback);
+    } catch (e) { selectFallback(); }
+  });
+});
+</script>
+</body>
+</html>
